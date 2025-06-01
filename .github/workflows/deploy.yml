@@ -44,12 +44,11 @@ jobs:
         script: |
           # Create backup of current deployment
           if [ -d "/var/www/askdb" ]; then
-            sudo mv /var/www/askdb /var/www/askdb_backup_$(date +%Y%m%d_%H%M%S)
+            mv /var/www/askdb /var/www/askdb_backup_$(date +%Y%m%d_%H%M%S) 2>/dev/null || echo "Backup failed, continuing..."
           fi
           
-          # Create deployment directory
-          sudo mkdir -p /var/www/askdb
-          sudo chown $USER:$USER /var/www/askdb
+          # Create deployment directory in user home first
+          mkdir -p ~/askdb_deploy
           
     - name: Copy build files to server
       uses: appleboy/scp-action@v0.1.7
@@ -69,19 +68,24 @@ jobs:
         password: ${{ secrets.SSH_PASSWORD }}
         port: ${{ secrets.SSH_PORT }}
         script: |
-          # Extract build files to /var/www/askdb
-          cd /var/www/askdb
+          # Extract build files to user directory first
+          cd ~/askdb_deploy
           tar -xzf /tmp/build.tar.gz
           
+          # Move to web directory with sudo (using echo for password)
+          echo "${{ secrets.SSH_PASSWORD }}" | sudo -S mkdir -p /var/www/askdb
+          echo "${{ secrets.SSH_PASSWORD }}" | sudo -S cp -r ~/askdb_deploy/* /var/www/askdb/
+          
           # Set proper permissions
-          sudo chown -R www-data:www-data /var/www/askdb
-          sudo chmod -R 755 /var/www/askdb
+          echo "${{ secrets.SSH_PASSWORD }}" | sudo -S chown -R www-data:www-data /var/www/askdb
+          echo "${{ secrets.SSH_PASSWORD }}" | sudo -S chmod -R 755 /var/www/askdb
           
           # Clean up
           rm /tmp/build.tar.gz
+          rm -rf ~/askdb_deploy
           
           # Restart web server (nginx/apache)
-          sudo systemctl reload nginx || sudo systemctl reload apache2 || true
+          echo "${{ secrets.SSH_PASSWORD }}" | sudo -S systemctl reload nginx 2>/dev/null || echo "${{ secrets.SSH_PASSWORD }}" | sudo -S systemctl reload apache2 2>/dev/null || echo "Web server reload skipped"
           
     - name: Verify deployment
       uses: appleboy/ssh-action@v1.0.3

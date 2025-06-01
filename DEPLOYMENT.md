@@ -35,7 +35,7 @@ You need to configure the following secrets in your GitHub repository settings:
 
 ## Server Setup Requirements
 
-### 1. Enable Password Authentication
+### 1. Enable Password Authentication and Configure Sudo
 ```bash
 # On your server, ensure password authentication is enabled
 sudo nano /etc/ssh/sshd_config
@@ -46,6 +46,17 @@ PubkeyAuthentication yes
 
 # Restart SSH service
 sudo systemctl restart ssh
+
+# Configure passwordless sudo for deployment commands (RECOMMENDED)
+sudo visudo
+
+# Add this line at the end (replace 'username' with your actual username):
+username ALL=(ALL) NOPASSWD: /bin/mkdir, /bin/cp, /bin/chown, /bin/chmod, /usr/bin/systemctl reload nginx, /usr/bin/systemctl reload apache2, /bin/mv
+
+# Or for more security, create a specific sudoers file:
+sudo tee /etc/sudoers.d/github-deploy << EOF
+username ALL=(ALL) NOPASSWD: /bin/mkdir -p /var/www/askdb, /bin/cp -r * /var/www/askdb/, /bin/chown -R www-data:www-data /var/www/askdb, /bin/chmod -R 755 /var/www/askdb, /usr/bin/systemctl reload nginx, /usr/bin/systemctl reload apache2, /bin/mv /var/www/askdb /var/www/askdb_backup_*
+EOF
 ```
 
 ### 2. Install Required Software
