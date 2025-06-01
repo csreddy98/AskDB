@@ -2,7 +2,7 @@
 export const config = {
   // Backend API configuration
   api: {
-    baseUrl: 'http://localhost:8000',
+    baseUrl: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000',
     timeout: 10000, // 10 seconds
     endpoints: {
       chat: '/api/chat',
