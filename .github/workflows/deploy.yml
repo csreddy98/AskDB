@@ -98,4 +98,3 @@ jobs:
           else
             echo "❌ Deployment failed - index.html not found at /var/www/askdb"
             exit 1
-          fi
