@@ -2,17 +2,15 @@ import { configureStore } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { combineReducers } from '@reduxjs/toolkit';
-import counterReducer from './counterSlice';
 import messagesReducer from './messagesSlice';
 
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['counter', 'messages'], // Persist both counter and messages slices
+  whitelist: ['messages'], // Only persist messages slice
 };
 
 const rootReducer = combineReducers({
-  counter: counterReducer,
   messages: messagesReducer,
 });
 

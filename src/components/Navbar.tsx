@@ -6,7 +6,9 @@ const Navbar: React.FC = () => {
   return (
     <nav className="navbar">
       <div className="nav-brand">
-        <Link to="/">AskDB</Link>
+        <Link to="/">
+          <img src="/assets/images/logo.png" alt="AskDB Logo" className="nav-logo" />
+        </Link>
       </div>
       <ul className="nav-links">
         <li>
@@ -17,9 +19,6 @@ const Navbar: React.FC = () => {
         </li>
         <li>
           <Link to="/about">About</Link>
-        </li>
-        <li>
-          <Link to="/counter">Counter</Link>
         </li>
       </ul>
     </nav>

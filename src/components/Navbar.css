@@ -7,6 +7,10 @@
   align-items: center;
 }
 
+img {
+  height: 40px;
+}
+
 .nav-brand a {
   color: white;
   text-decoration: none;

@@ -30,18 +30,6 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      <div className="features">
-        <h2>Technical Features</h2>
-        <ul>
-          <li><strong>React 19</strong> - Modern UI library for responsive design</li>
-          <li><strong>TypeScript</strong> - Type safety and better development experience</li>
-          <li><strong>Redux Toolkit</strong> - Efficient state management</li>
-          <li><strong>Redux Persist</strong> - State persistence across sessions</li>
-          <li><strong>React Router</strong> - Seamless client-side navigation</li>
-          <li><strong>MySQL Integration</strong> - Direct database connectivity</li>
-        </ul>
-      </div>
-
       <div className="getting-started">
         <h2>Getting Started</h2>
         <ol>
