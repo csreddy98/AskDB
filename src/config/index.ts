@@ -19,6 +19,36 @@ export const config = {
   database: {
     defaultPort: '3306',
     connectionTimeout: 30000, // 30 seconds
+    // Default database connections for quick setup
+    defaultConnections: [
+      {
+        name: 'Sakila Sample DB',
+        description: 'Sakila sample database',
+        host: 'localhost',
+        port: '3306',
+        username: 'askdb_user',
+        password: 'AskDB@2025',
+        database: 'sakila',
+      },
+      {
+        name: 'HR Management Database',
+        description: 'Human Resources management system',
+        host: 'localhost',
+        port: '3306',
+        username: 'askdb_user',
+        password: 'AskDB@2025',
+        database: 'hr_database',
+      },
+      {
+        name: 'Inventory System',
+        description: 'Product and inventory tracking',
+        host: 'localhost',
+        port: '3306',
+        username: 'inventory_user',
+        password: 'inv_pass',
+        database: 'inventory_db',
+      },
+    ],
   },
   
   // UI configuration

@@ -38,6 +38,9 @@ const DatabaseConnection: React.FC<DatabaseConnectionProps> = ({ isOpen, onClose
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [savedCredentials, setSavedCredentials] = useState<DatabaseCredentials[]>([]);
 
+  // Load default connections from config
+  const defaultConnections = config.database.defaultConnections;
+
   // Load saved credentials from localStorage on component mount
   useEffect(() => {
     const saved = localStorage.getItem('dbCredentials');
@@ -68,6 +71,20 @@ const DatabaseConnection: React.FC<DatabaseConnectionProps> = ({ isOpen, onClose
   // Load saved credentials into form
   const loadSavedCredentials = (saved: DatabaseCredentials) => {
     setCredentials(saved);
+    setErrors({});
+    setTestResult(null);
+  };
+
+  // Load default connection into form
+  const loadDefaultConnection = (defaultConn: typeof config.database.defaultConnections[number]) => {
+    const credentials: DatabaseCredentials = {
+      host: defaultConn.host,
+      port: defaultConn.port,
+      username: defaultConn.username,
+      password: defaultConn.password,
+      database: defaultConn.database,
+    };
+    setCredentials(credentials);
     setErrors({});
     setTestResult(null);
   };
@@ -183,10 +200,35 @@ const DatabaseConnection: React.FC<DatabaseConnectionProps> = ({ isOpen, onClose
       // Notify parent component about successful connection
       onConnect(credentials);
       
-    } catch (error) {
+    } catch (error: any) {
+      // Try to extract message from API response
+      let errorMessage = 'Connection failed. Please check your credentials and try again.';
+      
+      // Handle 503 error with nested detail structure
+      if (error.response?.status === 503 && error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (detail.message) {
+          errorMessage = detail.message;
+          // Optionally add error details if available
+          if (detail.error_details) {
+            errorMessage += ` (${detail.error_details})`;
+          }
+        }
+      }
+      // Handle other error formats
+      else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.detail?.message) {
+        errorMessage = error.response.data.detail.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       setTestResult({
         success: false,
-        message: handleApiError(error)
+        message: errorMessage
       });
     } finally {
       setIsTesting(false);
@@ -224,6 +266,33 @@ const DatabaseConnection: React.FC<DatabaseConnectionProps> = ({ isOpen, onClose
         </div>
         
         <div className="db-form">
+          {/* Default Connections Dropdown */}
+          <div className="default-connections">
+            <h3>Quick Connect</h3>
+            <div className="form-group">
+              <label htmlFor="defaultConnection">Choose a preset connection:</label>
+              <select
+                id="defaultConnection"
+                className="default-dropdown"
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const selectedConn = defaultConnections[parseInt(e.target.value)];
+                    loadDefaultConnection(selectedConn);
+                    e.target.value = ""; // Reset dropdown
+                  }
+                }}
+              >
+                <option value="">Select a default connection...</option>
+                {defaultConnections.map((conn, index) => (
+                  <option key={index} value={index}>
+                    {conn.name} - {conn.host}:{conn.port}/{conn.database}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Saved Credentials Section */}
           {savedCredentials.length > 0 && (
             <div className="saved-credentials">

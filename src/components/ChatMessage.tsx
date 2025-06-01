@@ -30,6 +30,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           <div className="message-time">{formatTime(message.timestamp)}</div>
         </div>
         }
+        {
+          message.text.startsWith('```sql') && !message?.chartData && (
+            <div className="message-bubble">
+              <div className="message-text">Didn't find any data to display. Please try a different query.</div>
+              <div className="message-time">{formatTime(message.timestamp)}</div>
+            </div>
+          )
+        }
         {message.sender === 'user' && (
           <div className="message-avatar user-avatar">
             👤
