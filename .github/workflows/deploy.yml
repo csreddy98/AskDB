@@ -1,0 +1,101 @@
+name: Build and Deploy to SSH Server
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Create .env file
+      run: |
+        echo "REACT_APP_API_BASE_URL=${{ secrets.REACT_APP_API_BASE_URL }}" > .env
+        
+    - name: Build React app
+      run: npm run build
+      
+    - name: Create deployment archive
+      run: |
+        tar -czf build.tar.gz -C build .
+        
+    - name: Deploy to SSH Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          # Create backup of current deployment
+          if [ -d "/var/www/askdb" ]; then
+            sudo mv /var/www/askdb /var/www/askdb_backup_$(date +%Y%m%d_%H%M%S)
+          fi
+          
+          # Create deployment directory
+          sudo mkdir -p /var/www/askdb
+          sudo chown $USER:$USER /var/www/askdb
+          
+    - name: Copy build files to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        source: "build.tar.gz"
+        target: "/tmp/"
+        
+    - name: Extract and setup files on server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          # Extract build files
+          cd /var/www/askdb
+          tar -xzf /tmp/build.tar.gz
+          
+          # Set proper permissions
+          sudo chown -R www-data:www-data /var/www/askdb
+          sudo chmod -R 755 /var/www/askdb
+          
+          # Clean up
+          rm /tmp/build.tar.gz
+          
+          # Restart web server (nginx/apache)
+          sudo systemctl reload nginx || sudo systemctl reload apache2 || true
+          
+    - name: Verify deployment
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          # Check if index.html exists
+          if [ -f "/var/www/askdb/index.html" ]; then
+            echo "✅ Deployment successful - index.html found"
+            ls -la /var/www/askdb/
+          else
+            echo "❌ Deployment failed - index.html not found"
+            exit 1
+          fi
